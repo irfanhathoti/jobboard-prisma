@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import type { Session } from "next-auth";
+import { signOutAction } from "@/app/actions/auth";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
@@ -10,11 +12,16 @@ const links = [
   { href: "/jobs", label: "Browse Jobs" },
 ];
 
-export default function Navbar() {
+export default function Navbar({
+  user,
+  loading = false,
+}: {
+  user?: Session["user"];
+  loading?: boolean;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  // "/" would match every route with startsWith, so it needs an exact check
   // exact match, so /jobs isn't highlighted while on /jobs/post
   const isActive = (href: string) => pathname === href;
 
@@ -40,14 +47,35 @@ export default function Navbar() {
               </Link>
             </li>
           ))}
-          <li>
-            <Link
-              href="/sign-in"
-              className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-85"
-            >
-              Sign In
-            </Link>
-          </li>
+          {loading ? (
+            <li
+              aria-hidden="true"
+              className="h-9 w-20 animate-pulse rounded-md bg-black/5 dark:bg-white/10"
+            />
+          ) : user ? (
+            <li className="flex items-center gap-3">
+              <span className="text-sm text-foreground/70">
+                {user.name ?? user.email}
+              </span>
+              <form action={signOutAction}>
+                <button
+                  type="submit"
+                  className="rounded-md border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10"
+                >
+                  Sign Out
+                </button>
+              </form>
+            </li>
+          ) : (
+            <li>
+              <Link
+                href="/sign-in"
+                className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-85"
+              >
+                Sign In
+              </Link>
+            </li>
+          )}
         </ul>
 
         <button
@@ -85,13 +113,27 @@ export default function Navbar() {
             </li>
           ))}
           <li className="pt-2">
-            <Link
-              href="/sign-in"
-              onClick={() => setOpen(false)}
-              className="block rounded-md bg-foreground px-2 py-2 text-center text-sm font-medium text-background"
-            >
-              Sign In
-            </Link>
+            {loading ? null : user ? (
+              <form action={signOutAction}>
+                <p className="px-2 pb-2 text-sm text-foreground/70">
+                  Signed in as {user.name ?? user.email}
+                </p>
+                <button
+                  type="submit"
+                  className="block w-full rounded-md border border-black/15 px-2 py-2 text-center text-sm font-medium dark:border-white/15"
+                >
+                  Sign Out
+                </button>
+              </form>
+            ) : (
+              <Link
+                href="/sign-in"
+                onClick={() => setOpen(false)}
+                className="block rounded-md bg-foreground px-2 py-2 text-center text-sm font-medium text-background"
+              >
+                Sign In
+              </Link>
+            )}
           </li>
         </ul>
       )}
